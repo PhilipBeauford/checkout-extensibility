@@ -12,44 +12,45 @@ import {
 	SkeletonText,
   } from "@shopify/checkout-ui-extensions";
   
-  // Set up some static product variants that could be on offer
-  // You'll need to change these to the appropriate values for your store
-  // Your product variant data could come from an external HTTP call using `fetch()`
-  const PRODUCT_VARIANTS_DATA = [
-	{
-	  id: "gid://shopify/ProductVariant/0000000000001",
-	  img: "https://via.placeholder.com/100/F1F1F1?text=P1",
-	  title: "Product 1 Title",
-	  price: 10.0,
-	},
-	{
-	  id: "gid://shopify/ProductVariant/0000000000002",
-	  img: "https://via.placeholder.com/100/F1F1F1?text=P2",
-	  title: "Product 2 Title",
-	  price: 20.0,
-	},
-  ];
-  
   // Set up the entry point for the extension
   extend(
 	"Checkout::Dynamic::Render",
-	(root, { lines, applyCartLinesChange, i18n }) => {
+	(root, { lines, applyCartLinesChange, query, i18n }) => {
 	  // Set up the states
 	  let products = [];
 	  let loading = true;
 	  let appRendered = false;
   
-	  // On initial load, fetch the product variants
-	  // If you're making a network request, then replace the following code with the HTTP call
-	  // If you don't need to make a network request, then you can call `renderApp()`
-	  new Promise((resolve) => {
-		setTimeout(() => {
-		  resolve(PRODUCT_VARIANTS_DATA);
-		}, 800);
-	  })
-		.then((result) => {
+	  // Use the `query` API method to send graphql queries to the Storefront API
+	  query(
+		`query ($first: Int!) {
+		  products(first: $first) {
+			nodes {
+			  id
+			  title
+			  images(first:1){
+				nodes {
+				  url
+				}
+			  }
+			  variants(first: 1) {
+				nodes {
+				  id
+				  price {
+					amount
+				  }
+				}
+			  }
+			}
+		  }
+		},
+		{
+		  variables: {first: 5},
+		},`
+	  )
+		.then(({data}) => {
 		  // Set the product variants
-		  products = result;
+		  products = data.products.nodes;
 		})
 		.catch((err) => console.error(err))
 		.finally(() => {
@@ -156,7 +157,7 @@ import {
 	  // Defines the main app responsible for rendering a product offer
 	  const app = root.createComponent(BlockStack, { spacing: "loose" }, [
 		root.createComponent(Divider),
-		root.createComponent(Heading, {}, "You may also like"),
+		root.createComponent(Heading, { level: 2 }, "You might also like"),
 		root.createComponent(BlockStack, { spacing: "loose" }, [
 		  root.createComponent(
 			InlineLayout,
@@ -200,27 +201,42 @@ import {
 		  return;
 		}
   
-		// Filter out any product variants on offer that are already current cart lines
+		// Get the IDs of all product variants in the cart
+		const cartLineProductVariantIds = lines.current.map((item) => item.merchandise.id);
+		// Filter out any products on offer that are already in the cart
 		const productsOnOffer = products.filter(
-		  (product) =>
-			!lines.current
-			  .map((item) => item.merchandise.id)
-			  .includes(product.id)
+		  (product) => {
+			const isProductVariantInCart = product.variants.nodes.some(
+			  ({id}) => cartLineProductVariantIds.includes(id)
+			);
+			return !isProductVariantInCart;
+		  }
 		);
-		// Choose the first available product variant on offer or display the default fallback product
-		const { id, img, title, price } = productsOnOffer[0] || products[0];
+  
+		if (!loading && productsOnOffer.length === 0) {
+		  // If loading is complete, but all available products are already in the cart, then remove the loading state and
+		  // don't render anything
+		  if (loadingState.parent) root.removeChild(loadingState);
+		  return;
+		}
+  
+		// Choose the first available product variant on offer
+		const { images, title, variants } = productsOnOffer[0];
   
 		// Localize the currency for international merchants and customers
-		const renderPrice = i18n.formatCurrency(price);
+		const renderPrice = i18n.formatCurrency(variants.nodes[0].price.amount);
+  
+		const imageUrl = images.nodes[0]?.url
+		  ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_medium.png?format=webp&v=1530129081";
   
 		// Bind data to the components
-		imageComponent.updateProps({ source: img });
+		imageComponent.updateProps({ source: imageUrl });
 		titleMarkup.updateText(title);
 		addButtonComponent.updateProps({
 		  accessibilityLabel: `Add ${title} to cart`,
 		});
 		priceMarkup.updateText(renderPrice);
-		merchandise.id = id;
+		merchandise.id = variants.nodes[0].id;
   
 		// Prevent against unnecessary re-renders
 		if (!appRendered) {
@@ -233,3 +249,4 @@ import {
 	  }
 	}
   );
+  

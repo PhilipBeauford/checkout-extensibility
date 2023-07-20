@@ -1,5 +1,5 @@
 {
-  "name": "checkout-ui-extension-upsell",
+  "name": "Checkout Bricks",
   "version": "1.0.0",
   "main": "web/index.js",
   "license": "UNLICENSED",
@@ -14,7 +14,8 @@
   "dependencies": {
     "@shopify/app": "3.44.1",
     "@shopify/checkout-ui-extensions-react": "^0.24.0",
-    "@shopify/cli": "3.44.1"
+    "@shopify/cli": "3.44.1",
+    "react": "^17.0.2"
   },
   "author": "Philips Home PC"
 }
