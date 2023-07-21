@@ -5,6 +5,9 @@ extension_points = [
   'Checkout::Dynamic::Render'
 ]
 
+[extensions.capabilities]
+api_access = true
+
 # [[metafields]]
 # namespace = "my-namespace"
 # key = "my-key"
