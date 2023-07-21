@@ -2,7 +2,8 @@ type = "checkout_ui_extension"
 name = "Text Block"
 
 extension_points = [
-  'Checkout::Dynamic::Render'
+  'Checkout::Dynamic::Render',
+  'Checkout::DeliveryAddress::RenderBefore'
 ]
 
 # [[metafields]]
@@ -14,9 +15,31 @@ extension_points = [
 # key = "my-key-2"
 
 # Read more on extension settings at https://shopify.dev/api/checkout-extensions/checkout/configuration
-# [settings]
-#   [[settings.fields]]
-#   key = "banner_title"
-#   type = "single_line_text_field"
-#   name = "Banner title"
-#   description = "Enter a title for the banner"
+
+[settings]
+  [[settings.fields]]
+  key = "title"
+  type = "single_line_text_field"
+  name = "Banner title"
+  description = "Enter a title for the banner."
+
+  [[settings.fields]]
+  key = "description"
+  type = "single_line_text_field"
+  name = "Banner description"
+  description = "Enter a description for the banner."
+
+  [[settings.fields]]
+  key = "status"
+  type = "single_line_text_field"
+  name = "Banner status"
+    [[settings.fields.validations]]
+    name = "choices"
+    value = "[\"info\", \"success\", \"warning\", \"critical\"]"
+
+  [[settings.fields]]
+  key = "collapsible"
+  type = "boolean"
+  name = "Show collapsible description."
+  description = "Display controls to expand or collapse the banner description."
+

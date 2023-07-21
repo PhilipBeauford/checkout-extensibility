@@ -1,19 +1,25 @@
-import React from 'react';
+import React from "react";
 import {
-  useExtensionApi,
   render,
   Banner,
-  useTranslate,
-} from '@shopify/checkout-ui-extensions-react';
+  useSettings,
+} from "@shopify/checkout-ui-extensions-react";
 
-render('Checkout::Dynamic::Render', () => <App />);
+// Set the entry points for the extension
+render("Checkout::Dynamic::Render", () => <App />);
+render("Checkout::DeliveryAddress::RenderBefore", () => <App />);
 
 function App() {
-  const {extensionPoint} = useExtensionApi();
-  const translate = useTranslate();
+  // Use the merchant-defined settings to retrieve the extension's content
+  const {title, description, collapsible, status: merchantStatus} = useSettings();
+
+  // Set a default status for the banner if a merchant didn't configure the banner in the checkout editor
+  const status = merchantStatus ?? 'info';
+
+  // Render the banner
   return (
-    <Banner title="Text Block">
-      {translate('welcome', {extensionPoint})}
+    <Banner title={title} status={status} collapsible={collapsible}>
+      {description}
     </Banner>
   );
 }

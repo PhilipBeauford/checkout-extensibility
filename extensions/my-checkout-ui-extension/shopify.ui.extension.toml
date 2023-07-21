@@ -29,6 +29,7 @@ api_access = true
   key = "field_key"
   type = "boolean"
   name = "field-name"
+  
   [[settings.fields]]
   key = "field_key_2"
   type = "number_integer"
