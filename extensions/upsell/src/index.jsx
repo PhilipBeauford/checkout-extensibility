@@ -66,6 +66,10 @@ function App() {
     .then(({data}) => {
       // Set the `products` array so that you can reference the array items
       setProducts(data.products.nodes);
+    //   console.log('data.products.nodes', data.products.nodes);
+    //   console.log('data', data);
+
+
     })
     .catch((error) => console.error(error))
     .finally(() => setLoading(false));
@@ -92,8 +96,10 @@ function App() {
         <BlockStack spacing="loose">
           <InlineLayout
             spacing="base"
-            columns={[64, "fill", "auto"]}
+            columns={[64, "fill", 80]}
             blockAlignment="center"
+            cornerRadius= "large"
+            padding= "loose"
           >
             <SkeletonImage aspectRatio={1} />
             <BlockStack spacing="none">
@@ -117,6 +123,8 @@ function App() {
 
   // Get the IDs of all product variants in the cart
   const cartLineProductVariantIds = lines.map((item) => item.merchandise.id);
+  console.log('cartLineProductVariantIds', cartLineProductVariantIds);
+
   // Filter out any products on offer that are already in the cart
   const productsOnOffer = products.filter(
     (product) => {
@@ -142,6 +150,8 @@ function App() {
   const imageUrl = images.nodes[0]?.url
     ?? "https://cdn.shopify.com/s/files/1/0533/2089/files/placeholder-images-image_medium.png?format=webp&v=1530129081";
 
+
+
   return (
     <BlockStack spacing="loose">
       <Divider />
@@ -153,8 +163,10 @@ function App() {
           // Image: column should be 64px wide
           // BlockStack: column, which contains the title and price, should "fill" all available space
           // Button: column should "auto" size based on the intrinsic width of the elements
-          columns={[64, "fill", "auto"]}
+          columns={[64, "fill", 80]}
           blockAlignment="center"
+          cornerRadius= "large"
+          padding= "loose"
         >
           <Image
             border="base"

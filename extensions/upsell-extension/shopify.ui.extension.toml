@@ -1,11 +1,11 @@
 type = "checkout_ui_extension"
-name = "Upsell Extension"
+name = "Upsell Single"
 
 extension_points = [
   'Checkout::Dynamic::Render'
 ]
 
-[extensions.capabilities]
+[capabilities]
 api_access = true
 
 # [[metafields]]
