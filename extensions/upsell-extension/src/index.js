@@ -123,7 +123,6 @@ extend(
 		loading: false,
 		onPress: async () => {
 			addButtonComponent.updateProps({ loading: true });
-			
 			buttonPressed = true;
 
 			// Apply the cart lines change
@@ -135,7 +134,6 @@ extend(
 
 			addButtonComponent.updateProps({ loading: false });
 
-			console.log('pressed?', buttonPressed);
 			if (result.type === "error") {
 				// An error occurred adding the cart line
 				// Verify that you're using a valid product variant ID
@@ -198,9 +196,6 @@ extend(
 
 	// This function will be called once the product variants are initially loaded or the cart lines have changed
 	function renderApp() {
-		console.log('buttoned?', buttonPressed);
-
-		
 		if (loading) {
 			// If still loading, then do nothing
 			return;

@@ -1,16 +1,13 @@
 type = "checkout_ui_extension"
-name = "Upsell"
+name = "Donations Widget"
 
 extension_points = [
   'Checkout::Dynamic::Render'
 ]
 
-[capabilities]
-api_access = true
-
-[[metafields]]
-namespace = "custom"
-key = "upsell_product"
+# [[metafields]]
+# namespace = "my-namespace"
+# key = "my-key"
 
 # [[metafields]]
 # namespace = "my-namespace"

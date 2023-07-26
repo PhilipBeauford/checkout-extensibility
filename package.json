@@ -12,8 +12,8 @@
     "deploy": "shopify app deploy"
   },
   "dependencies": {
-    "@shopify/app": "3.44.1",
-    "@shopify/checkout-ui-extensions-react": "^0.24.0",
+    "@shopify/app": "^3.47.5",
+    "@shopify/checkout-ui-extensions-react": "^0.27.1",
     "@shopify/cli": "3.44.1",
     "react": "^17.0.2"
   },
