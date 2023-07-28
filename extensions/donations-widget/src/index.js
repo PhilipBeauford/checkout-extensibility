@@ -15,13 +15,43 @@ import {
 } from '@shopify/checkout-ui-extensions';
 
 
-  extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query, i18n }) => {
+extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query, i18n }) => {
 	const openIds = ['one'];
-	const lineItems = root.createText('');
 	
 	//Manually subscribe to changes to cart lines.
-	lines.subscribe((value) => {
+	lines.subscribe(async(value) => {
 		if(value) {
+									
+			let secondArray = [];
+			console.log('empty array', secondArray);
+			
+			
+			// Grab lines objects only if title matches
+			lines.current.forEach(lineObj => {
+				if(lineObj.merchandise.title == 'The One Dollar Donation') {
+					secondArray.push(lineObj);
+				}
+				console.log('lineObjECTS-DOS?', lineObj);
+			})
+
+			console.log('obj filter DOS?', secondArray);
+			console.log('linesCurrent? DOS', lines.current);
+
+			
+
+			if(secondArray[0].quantity > 2 && selector.props.value != secondArray[0].quantity) {
+				// Remove added donations/cart lines (need line item id)
+				console.log('secondArray', secondArray.id, secondArray[0].id);
+
+					const result2 = await applyCartLinesChange({
+						type: "removeCartLine",
+						id: secondArray[0].id, // Need reliable line item id number
+						quantity: secondArray[0].quantity - selector.props.value,
+					});
+					
+					console.log('removal result', result2);
+				
+			}
 
 		}
 		
@@ -32,15 +62,15 @@ import {
 
 
 	const checkDrop = root.createComponent(
-		  InlineLayout,
-		  {
+		InlineLayout,
+		{
 			blockAlignment: 'center',
 			spacing: 'base',
 			columns: ['auto', 'fill'],
 			padding: 'loose',
 			border: ['none', 'none', 'none', 'none'],
-		  },
-		  [
+		},
+		[
 			root.createComponent(BlockStack, {},
 			[
 
@@ -57,71 +87,78 @@ import {
 						border: ['none', 'none', 'none', 'none'],
 					},
 					[
+
 						root.createComponent(Checkbox, {
 							toggles: "one",
 							checked: "",
 							onChange: async () => {
+							
+							// If checkbox is NOT checked, add a bottom border & update props
+							if( checkDrop.children[0].children[1].children[0].props.checked == "") {
+								checkDrop.updateProps({ border: ['none', 'none', 'base', 'none']});
+								checkDrop.children[0].children[1].children[0].updateProps( {checked: "false"});
+
+								console.log('checkbox was just checked?', checkDrop.children[0].children[1].children[0].props.checked);
+
+								// Add to cart $2 auto donation, apply the cart lines change
+								const result = await applyCartLinesChange({
+									type: "addCartLine",
+									merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
+									quantity: 2,
+								});
+
+									if (result.type === "error") {
+									// An error occurred adding the cart line
+									// Verify that you're using a valid product variant ID
+									// For example, 'gid://shopify/ProductVariant/123'
+									console.error('error', result.message);
+									const errorComponent = root.createComponent(
+										Banner,
+										{ status: "critical" },
+										["There was an issue adding this product. Please try again."]
+									);
+									// Render an error Banner as a child of the top-level app component for three seconds, then remove it
+									const topLevelComponent = root.children[0];
+									topLevelComponent.appendChild(errorComponent);
+									setTimeout(
+										() => topLevelComponent.removeChild(errorComponent),
+										3000
+									);
+								}
 								
-								console.log("checkdrop", checkDrop);
-							  
-							  // If checkbox is NOT checked, add a bottom border & update props
-							  if( checkDrop.children[0].children[1].children[0].props.checked == "") {
-								  checkDrop.updateProps({ border: ['none', 'none', 'base', 'none']});
-								  checkDrop.children[0].children[1].children[0].updateProps( {checked: "false"});
+							} else if(checkDrop.children[0].children[1].children[0].props.checked == 'false') {
+								checkDrop.updateProps({ border: ['none', 'none', 'none', 'none']});
+								checkDrop.children[0].children[1].children[0].updateProps( {checked: ""})
 
-								  console.log('checkbox was just checked?', checkDrop.children[0].children[1].children[0].props.checked);
+								let filteredArray = [];
 
-								  // Apply the cart lines change
-								  const result = await applyCartLinesChange({
-									  type: "addCartLine",
-									  merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
-									  quantity: 2,
-								  });
+								// Grab lines objects only if title matches
+								lines.current.forEach(lineObj => {
+									if(lineObj.merchandise.title == 'The One Dollar Donation') {
+										filteredArray.push(lineObj);
+									}
+									console.log('lineObj?', lineObj);
+								})
 
-									  if (result.type === "error") {
-									  // An error occurred adding the cart line
-									  // Verify that you're using a valid product variant ID
-									  // For example, 'gid://shopify/ProductVariant/123'
-									  console.error('error', result.message);
-									  const errorComponent = root.createComponent(
-										  Banner,
-										  { status: "critical" },
-										  ["There was an issue adding this product. Please try again."]
-									  );
-									  // Render an error Banner as a child of the top-level app component for three seconds, then remove it
-									  const topLevelComponent = root.children[0];
-									  topLevelComponent.appendChild(errorComponent);
-									  setTimeout(
-										  () => topLevelComponent.removeChild(errorComponent),
-										  3000
-									  );
-								  }
-								  
-							  } else if(checkDrop.children[0].children[1].children[0].props.checked == 'false') {
-								  checkDrop.updateProps({ border: ['none', 'none', 'none', 'none']});
-								  checkDrop.children[0].children[1].children[0].updateProps( {checked: ""})
+								console.log('obj filter worked?', filteredArray);
+								console.log('linesCurrent?', lines.current);
 
-								  
-								  if(lines.current.lastItem.merchandise.title == "The One Dollar Donation") {
-									//  Remove the added cart lines (need line item id)
+								//Remove added donations/cart lines (need line item id)
+								filteredArray.forEach(async donation => {
 									const removeLines = await applyCartLinesChange({
 										type: "removeCartLine",
-										id: lines.current.lastItem.id,   // Need reliable line item id number
-										quantity: 2,
+										id: donation.id, // Need reliable line item id number
+										quantity: donation.quantity,
 									});
-								  }
-
-							  }
+								})
 							}
-						  }),
-						  '$2- Show your support for the Carry On Foundation.',
-					]),
-
+							}
+						}),
+						'$2- Show your support for the Carry On Foundation.',
+					]
+				),
 			])
-			
-			
-
-		  ],
+		],
 	);
 
 
@@ -173,167 +210,136 @@ import {
 			},
 		],
 		onChange: (value) => { selector.updateProps({value: parseInt(value)}); }
-	  })
+	})
 
 
+	// Form inner
 	const disclosureView = root.createComponent(
-	  View,
-	  {
+	View,
+	{
 		id: "one",
 		padding: ['base', 'base', 'base', 'base'],
-	  },
-	  [
+	},
+	[
 		root.createComponent(
-		  Form,
-		  {
+		Form,
+		{
 			onSubmit: () =>
-			  console.log('onSubmit event'),
-		  },
-		  [
+			console.log('onSubmit event'),
+		},
+		[
+
 			root.createComponent(BlockStack, {}, [
-			  root.createComponent(
-				InlineLayout,
-				{
-				  columns: ['fill', 'fill'],
-				  spacing: 'none',
-				},
-				[
+				root.createComponent(
+					InlineLayout,
+					{
+					columns: ['fill', 'fill'],
+					spacing: 'none',
+					},
+					[
 
-				  root.createComponent(Button, {
-					kind: 'secondary',
-					id: 'Button2',
-					// appearance: Style.when({hover: true}, 'accent'),
-					onPress: () => {
-						selector.updateProps({ value: 2 });
-					}
-				  }, '$2'),
+					root.createComponent(Button, {
+						kind: 'secondary',
+						id: 'Button2',
+						// appearance: Style.when({hover: true}, 'accent'),
+						onPress: () => {
+							selector.updateProps({ value: 2 });
+						}
+					}, '$2'),
 
-				  root.createComponent(Button, {
-					kind: 'secondary',
-					id: 'Button5',
-					onPress: () => {
-						selector.updateProps({ value: 5 });
-					}
-				  }, '$5'),
+					root.createComponent(Button, {
+						kind: 'secondary',
+						id: 'Button5',
+						onPress: () => {
+							selector.updateProps({ value: 5 });
+						}
+					}, '$5'),
 
-				  root.createComponent(Button, {
-					kind: 'secondary',
-					id: 'Button10',
-					onPress: () => {
-						selector.updateProps({ value: 10 });
-					}
-				  }, '$10'),
+					root.createComponent(Button, {
+						kind: 'secondary',
+						id: 'Button10',
+						onPress: () => {
+							selector.updateProps({ value: 10 });
+						}
+					}, '$10'),
 
-				],
-			  ),
+					],
+				),
 
-			  root.createComponent(
-				InlineLayout,
-				{
-				  columns: ['fill', 'auto'],
-				  spacing: 'base',
-				},
-				[
-					selector,
+				root.createComponent(
+					InlineLayout,
+					{
+					columns: ['fill', 'auto'],
+					spacing: 'base',
+					},
+					[
+						selector,
 
-					  root.createComponent(View, {}, [
-						root.createComponent(
-						  Button,
-						  {
-							accessibilityRole: 'submit',
-							kind: 'primary',
-							onPress: async () => {;
-								
-								if(lines.current.lastItem.merchandise.title == "The One Dollar Donation") {
-									// Remove any existing donations
-									const lastItems = await applyCartLinesChange({
-										type: "removeCartLine",
-										id: lines.current.lastItem.id,
-										quantity: lines.current.lastItem.quantity,
-									});
-								} else if(lines.current.lastItem.merchandise.title != "The One Dollar Donation") {
-									let idList = [];
-									let qtyList = [];
+						root.createComponent(View, {}, [
+							root.createComponent(
+							Button,
+							{
+								accessibilityRole: 'submit',
+								kind: 'primary',
+								onPress: async () => {
 									
-									lines.current.forEach(line => {
-										if(line.merchandise.title == "The One Dollar Donation") {
 											
-											idList.push(line.id);
-											qtyList.push(line.quantity);
-
+										// Apply the cart lines change
+										const result = await applyCartLinesChange({
+											type: "addCartLine",
+											merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
+											quantity: parseInt(selector.props.value),
+										});
+										
+										console.log('result', result);
+	
+										if (result.type === "error") {
+											// An error occurred adding the cart line
+											// Verify that you're using a valid product variant ID
+											// For example, 'gid://shopify/ProductVariant/123'
+											console.error('error', result.message);
+											const errorComponent = root.createComponent(
+												Banner,
+												{ status: "critical" },
+												["There was an issue adding this product. Please try again."]
+											);
+											// Render an error Banner as a child of the top-level app component for three seconds, then remove it
+											const topLevelComponent = root.children[0];
+											topLevelComponent.appendChild(errorComponent);
+											setTimeout(
+												() => topLevelComponent.removeChild(errorComponent),
+												3000
+											);
 										}
-									})
-									
-									idList.forEach(lineId => {
-										qtyList.forEach(async qtyAmount => {
-											
-											const existing = await applyCartLinesChange({
-												type: "removeCartLine",
-												id: lineId,
-												quantity: qtyAmount,
-											});
-											
-										})
-
-									})
 									
 
-								}
+								},
+							},
+							'Update',
+							),
+						]),
+					],
+				),
 
-
-								// Apply the cart lines change
-								const result = await applyCartLinesChange({
-								  type: "addCartLine",
-								  merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
-								  quantity: parseInt(selector.props.value),
-								});
-
-								if (result.type === "error") {
-								  // An error occurred adding the cart line
-								  // Verify that you're using a valid product variant ID
-								  // For example, 'gid://shopify/ProductVariant/123'
-								  console.error('error', result.message);
-								  const errorComponent = root.createComponent(
-									Banner,
-									{ status: "critical" },
-									["There was an issue adding this product. Please try again."]
-								  );
-								  // Render an error Banner as a child of the top-level app component for three seconds, then remove it
-								  const topLevelComponent = root.children[0];
-								  topLevelComponent.appendChild(errorComponent);
-								  setTimeout(
-									() => topLevelComponent.removeChild(errorComponent),
-									3000
-								  );
-								}
-
-							  },
-						  },
-						  'Update',
-						),
-					  ]),
-				],
-			  ),
-
-			  root.createComponent(
-				Text,
-				{
-					size: 'base'
-				},
-				'Our Mission: Teach youth resilience skills and promote mental health through action sports and outdoor recreation.'
-			  )
+				root.createComponent(
+					Text,
+					{
+						size: 'base'
+					},
+					'Our Mission: Teach youth resilience skills and promote mental health through action sports and outdoor recreation.'
+				)
 			]),
-		  ],
+		],
 		),
-	  ],
+	],
 	);
 
 
 	// disclosure is a drop-down container
 	// both checkbox 'div' & entire disclosureView are rendered by this one disclosure/dropdown
 	const donationWidget = root.createComponent(
-	  Disclosure,
-	  {
+	Disclosure,
+	{
 		open: 'false',
 		onToggle: (open) => {
 			if (donationWidget.props.open == "false") {
@@ -342,31 +348,31 @@ import {
 				donationWidget.updateProps({open: 'false'})
 			}
 		}
-	  },
-	  [checkDrop, disclosureView],
+	},
+	[checkDrop, disclosureView],
 	);
 
 
 	// Main app that contains the donation widget.. which contains all fields, wrapped as one 'box' using border
 	const donationsContainer = root.createComponent(
-	  View,
-	  {
+	View,
+	{
 		maxInlineSize: 'fill',
 		cornerRadius: 'large',
 		border: 'base',
-	  },
-	  [
+	},
+	[
 		root.createComponent(
-		  BlockStack,
-		  {
+		BlockStack,
+		{
 			spacing: 'none',
-		  },
-		  [
+		},
+		[
 			donationWidget,
-		  ],
+		],
 		),
-	  ],
+	],
 	);
-  
+
 	root.appendChild(donationsContainer);
-  });
+});
