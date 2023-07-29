@@ -11,55 +11,34 @@ import {
 	Checkbox,
 	Select,
 	Banner,
-	Style,
 } from '@shopify/checkout-ui-extensions';
 
 
 extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query, i18n }) => {
-	const openIds = ['one'];
-	
-	//Manually subscribe to changes to cart lines.
+
+	// Subscribe to changes to cart lines. When donations added, remove old donations
 	lines.subscribe(async(value) => {
 		if(value) {
-									
-			let secondArray = [];
-			console.log('empty array', secondArray);
-			
-			
-			// Grab lines objects only if title matches
+			let filteredArray = [];
+
+			// Grab line objects only if titles match donation
 			lines.current.forEach(lineObj => {
 				if(lineObj.merchandise.title == 'The One Dollar Donation') {
-					secondArray.push(lineObj);
+					filteredArray.push(lineObj);
 				}
-				console.log('lineObjECTS-DOS?', lineObj);
 			})
 
-			console.log('obj filter DOS?', secondArray);
-			console.log('linesCurrent? DOS', lines.current);
+			if(filteredArray[0].quantity > 2 && selector.props.value != filteredArray[0].quantity) {
 
-			
-
-			if(secondArray[0].quantity > 2 && selector.props.value != secondArray[0].quantity) {
-				// Remove added donations/cart lines (need line item id)
-				console.log('secondArray', secondArray.id, secondArray[0].id);
-
-					const result2 = await applyCartLinesChange({
-						type: "removeCartLine",
-						id: secondArray[0].id, // Need reliable line item id number
-						quantity: secondArray[0].quantity - selector.props.value,
-					});
-					
-					console.log('removal result', result2);
-				
+				// Remove added donations/cart lines
+				const result2 = await applyCartLinesChange({
+					type: "removeCartLine",
+					id: filteredArray[0].id, // Needs reliable line item id number
+					quantity: filteredArray[0].quantity - selector.props.value,
+				});
 			}
-
 		}
-		
-		console.log('lines changed', lines);
 	});
-
-
-
 
 	const checkDrop = root.createComponent(
 		InlineLayout,
@@ -75,7 +54,7 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 			[
 
 				root.createComponent(Image, {
-					source: "https://cdn.shopify.com/s/files/1/0728/3494/1235/files/output-onlinepngtools_4.png?v=1690317987",
+					source: "https://cdn.shopify.com/s/files/1/0728/3494/1235/files/logo_3.svg?v=1690579006",
 				}),
 
 				root.createComponent(InlineLayout, 
@@ -93,39 +72,36 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 							checked: "",
 							onChange: async () => {
 							
-							// If checkbox is NOT checked, add a bottom border & update props
+							// If checkbox is checked, add a bottom border & update props
 							if( checkDrop.children[0].children[1].children[0].props.checked == "") {
 								checkDrop.updateProps({ border: ['none', 'none', 'base', 'none']});
 								checkDrop.children[0].children[1].children[0].updateProps( {checked: "false"});
 
-								console.log('checkbox was just checked?', checkDrop.children[0].children[1].children[0].props.checked);
-
-								// Add to cart $2 auto donation, apply the cart lines change
+								// Auto add to cart $2 donation
 								const result = await applyCartLinesChange({
 									type: "addCartLine",
 									merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
 									quantity: 2,
 								});
 
-									if (result.type === "error") {
-									// An error occurred adding the cart line
-									// Verify that you're using a valid product variant ID
-									// For example, 'gid://shopify/ProductVariant/123'
-									console.error('error', result.message);
-									const errorComponent = root.createComponent(
-										Banner,
-										{ status: "critical" },
-										["There was an issue adding this product. Please try again."]
-									);
-									// Render an error Banner as a child of the top-level app component for three seconds, then remove it
-									const topLevelComponent = root.children[0];
-									topLevelComponent.appendChild(errorComponent);
-									setTimeout(
-										() => topLevelComponent.removeChild(errorComponent),
-										3000
-									);
+								if (result.type === "error") {
+								// An error occurred adding the cart line
+								// Verify that you're using a valid product variant ID
+								// For example, 'gid://shopify/ProductVariant/123'
+								console.error('error', result.message);
+								const errorComponent = root.createComponent(
+									Banner,
+									{ status: "critical" },
+									["There was an issue adding this product. Please try again."]
+								);
+								// Render an error Banner as a child of the top-level app component for three seconds, then remove it
+								const topLevelComponent = root.children[0];
+								topLevelComponent.appendChild(errorComponent);
+								setTimeout(
+									() => topLevelComponent.removeChild(errorComponent),
+									3000
+								);
 								}
-								
 							} else if(checkDrop.children[0].children[1].children[0].props.checked == 'false') {
 								checkDrop.updateProps({ border: ['none', 'none', 'none', 'none']});
 								checkDrop.children[0].children[1].children[0].updateProps( {checked: ""})
@@ -137,17 +113,13 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 									if(lineObj.merchandise.title == 'The One Dollar Donation') {
 										filteredArray.push(lineObj);
 									}
-									console.log('lineObj?', lineObj);
 								})
 
-								console.log('obj filter worked?', filteredArray);
-								console.log('linesCurrent?', lines.current);
-
-								//Remove added donations/cart lines (need line item id)
+								//Remove added donations/cart lines
 								filteredArray.forEach(async donation => {
 									const removeLines = await applyCartLinesChange({
 										type: "removeCartLine",
-										id: donation.id, // Need reliable line item id number
+										id: donation.id, // Needs reliable line item id number
 										quantity: donation.quantity,
 									});
 								})
@@ -160,7 +132,6 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 			])
 		],
 	);
-
 
 	const selector = 	root.createComponent(Select, {
 		label: 'Donation amount',
@@ -212,7 +183,6 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 		onChange: (value) => { selector.updateProps({value: parseInt(value)}); }
 	})
 
-
 	// Form inner
 	const disclosureView = root.createComponent(
 	View,
@@ -224,8 +194,7 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 		root.createComponent(
 		Form,
 		{
-			onSubmit: () =>
-			console.log('onSubmit event'),
+			onSubmit: () => console.log('onSubmit event'),
 		},
 		[
 
@@ -237,32 +206,39 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 					spacing: 'none',
 					},
 					[
+						root.createComponent(Button, {
+							kind: 'primary',
+							id: 'Button2',
+							// appearance: Style.when({hover: true}, 'accent'),
+							onPress: () => {
+								selector.updateProps({ value: 2 });
+								disclosureView.children[0].children[0].children[0].children[0].updateProps({kind: 'primary'})
+								disclosureView.children[0].children[0].children[0].children[1].updateProps({kind: 'secondary'})
+								disclosureView.children[0].children[0].children[0].children[2].updateProps({kind: 'secondary'})
+							}
+						}, '$2'),
 
-					root.createComponent(Button, {
-						kind: 'secondary',
-						id: 'Button2',
-						// appearance: Style.when({hover: true}, 'accent'),
-						onPress: () => {
-							selector.updateProps({ value: 2 });
-						}
-					}, '$2'),
+						root.createComponent(Button, {
+							kind: 'secondary',
+							id: 'Button5',
+							onPress: () => {
+								selector.updateProps({ value: 5 });
+								disclosureView.children[0].children[0].children[0].children[0].updateProps({kind: 'secondary'})
+								disclosureView.children[0].children[0].children[0].children[1].updateProps({kind: 'primary'})
+								disclosureView.children[0].children[0].children[0].children[2].updateProps({kind: 'secondary'})
+							}
+						}, '$5'),
 
-					root.createComponent(Button, {
-						kind: 'secondary',
-						id: 'Button5',
-						onPress: () => {
-							selector.updateProps({ value: 5 });
-						}
-					}, '$5'),
-
-					root.createComponent(Button, {
-						kind: 'secondary',
-						id: 'Button10',
-						onPress: () => {
-							selector.updateProps({ value: 10 });
-						}
-					}, '$10'),
-
+						root.createComponent(Button, {
+							kind: 'secondary',
+							id: 'Button10',
+							onPress: () => {
+								selector.updateProps({ value: 10 });
+								disclosureView.children[0].children[0].children[0].children[0].updateProps({kind: 'secondary'})
+								disclosureView.children[0].children[0].children[0].children[1].updateProps({kind: 'secondary'})
+								disclosureView.children[0].children[0].children[0].children[2].updateProps({kind: 'primary'})
+							}
+						}, '$10'),
 					],
 				),
 
@@ -282,17 +258,14 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 								accessibilityRole: 'submit',
 								kind: 'primary',
 								onPress: async () => {
-									
-											
+
 										// Apply the cart lines change
 										const result = await applyCartLinesChange({
 											type: "addCartLine",
 											merchandiseId: 'gid://shopify/ProductVariant/45393245176115',
 											quantity: parseInt(selector.props.value),
 										});
-										
-										console.log('result', result);
-	
+
 										if (result.type === "error") {
 											// An error occurred adding the cart line
 											// Verify that you're using a valid product variant ID
@@ -311,8 +284,6 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 												3000
 											);
 										}
-									
-
 								},
 							},
 							'Update',
@@ -334,9 +305,8 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 	],
 	);
 
-
-	// disclosure is a drop-down container
-	// both checkbox 'div' & entire disclosureView are rendered by this one disclosure/dropdown
+	// Disclosure is a drop-down container
+	// Checkbox container & disclosureView are rendered on toggle
 	const donationWidget = root.createComponent(
 	Disclosure,
 	{
@@ -353,7 +323,7 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 	);
 
 
-	// Main app that contains the donation widget.. which contains all fields, wrapped as one 'box' using border
+	// Main app that contains the donation widget
 	const donationsContainer = root.createComponent(
 	View,
 	{
