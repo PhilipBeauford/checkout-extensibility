@@ -30,20 +30,25 @@ extend('Checkout::Dynamic::Render', (root, { lines, applyCartLinesChange, query,
 		View, 
 		{ 
 			id: 'one', 
-			padding: 'base'
+			padding: ['small200', 'base', 'base', 'base'],
 		},
-
-			root.createComponent(TextBlock,{size: 'base'},
-				'Lorem Ipsum paragraph',
-			),
-
 			root.createComponent(
-				Button,
-				{
-					to: 'https://auth.govx.com/shopify/verify?shop=thread-llc.myshopify.com&utm_source=shopify&utm_medium=govxid&utm_campaign=custom_link'
-				},
-				"Verify ID",
-			)
+				BlockStack,
+				{},
+				[
+					root.createComponent( TextBlock,{size: 'base'},
+						'Lorem Ipsum paragraph',
+					),
+	
+					root.createComponent(
+						Button,
+						{
+							to: 'https://auth.govx.com/shopify/verify?shop=thread-llc.myshopify.com&utm_source=shopify&utm_medium=govxid&utm_campaign=custom_link'
+						},
+						"Verify ID",
+					)
+				]	
+			),
 		),
 	]);
 
