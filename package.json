@@ -12,10 +12,10 @@
     "deploy": "shopify app deploy"
   },
   "dependencies": {
-    "@shopify/app": "^3.47.5",
+    "@shopify/app": "^3.48.0",
     "@shopify/checkout-ui-extensions": "^0.26.2",
     "@shopify/checkout-ui-extensions-react": "^0.27.1",
-    "@shopify/cli": "3.44.1",
+    "@shopify/cli": "^3.48.0",
     "react": "^17.0.2"
   },
   "author": "Philips Home PC"
